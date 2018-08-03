@@ -18,7 +18,8 @@ var cloudant;
 var fileToUpload;
 
 var dbCredentials = {
-    dbName: 'my_sample_db'
+    dbName: 'my_sample_db',
+    dbHotspots: 'hotspots'
 };
 
 var bodyParser = require('body-parser');
@@ -421,6 +422,51 @@ app.get('/api/favorites', function(request, response) {
 
                 });
             }
+
+        } else {
+            console.log(err);
+        }
+    });
+
+});
+
+app.get('/api/hotspots', function(request, response) {
+
+    console.log("Get method invoked.. /api/hotspots")
+
+    db = cloudant.use(dbCredentials.dbHotspots);
+    var docList = [];
+    var i = 0;
+    db.list(function(err, body) {
+        if (!err) {
+            var len = body.rows.length;
+            console.log('total # of docs -> ' + len);
+
+            body.rows.forEach(function(document) {
+
+                db.get(document.id, {
+                    revs_info: true
+                }, function(err, doc) {
+                    if (!err) {
+                        var responseData = {
+                            "name": doc.name,
+                            "latitude": doc.latitude,
+                            "longitude": doc.longitude,
+                            "status": doc.status
+                        };                    
+                        docList.push(responseData);
+                        i++;
+                        if (i >= len) {
+                            response.write(JSON.stringify(docList));
+                            console.log('ending response...');
+                            response.end();
+                        }
+                    } else {
+                        console.log(err);
+                    }
+                });
+
+            });
 
         } else {
             console.log(err);
